@@ -2,12 +2,14 @@ package org.coepi.api.v4.dao
 
 import org.coepi.api.v4.TCNCloudAPIHandler
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.nio.charset.Charset
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 
+@Disabled
 class TCNReportsDaoTest {
 
     private val dao = TCNReportsDao()
