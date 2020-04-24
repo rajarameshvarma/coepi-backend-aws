@@ -8,15 +8,45 @@ CoEpi Cloud API on AWS.
 * **Routing and Load Balancing**: API Gateway
 * **Permissions Management**: IAM
 
-## Build
+## Getting Started
 
-JDK 11 or newer required
+Requirements:
 
-```sh
-gradle build
+* JDK11 or newer
+
+### Infrastructure Setup
+
+All infrastructure concerns are managed by [Terraform](https://terraform.io/) (v0.12+). You can either download Terraform from their site, or install it with [Choco](https://chocolatey.org/) (Windows), [brew](https://brew.sh) (macOS), or your Linux distribution's package manager.
+
+Next you will want to create an S3 bucket to store your Terraform [remote state](https://www.terraform.io/docs/backends/index.html). This will need to be uniquely named, and should be private and encrypted. A script has been provided to do this for you:
+
+```shell
+TFSTATE_BUCKET=<your bucket name here> ./scripts/terraform_setup.sh
 ```
 
-Then, run:
+(If you're not sure what to name your bucket, try something like `<your github username>-tcn-infra`.)
+
+With your bucket created, go to `./terraform` in the project root directory. Copy `backend.local.example` to `backend.local`. Edit the contents to update the `bucket` property to match the bucket name you created above. E.g.,
+
+```text
+bucket = "s3-bucket-with-your-terraform-state"
+```
+
+_(The `backend.local` file is specific to your development environment and is ignored by source control using `.gitignore`.)_
+
+Finally, initialize your Terraform project:
+
+```shell
+terraform init -backend-config=backend.local
+```
+
+## Build
+
+```sh
+./gradlew build
+```
+
+Then run:
 
 ```sh
 ./gradlew shadowJar
@@ -24,21 +54,17 @@ Then, run:
 
 ## AWS Deploy via Terraform
 
+These steps assume you have already initialized Terraform as described in "Infrastructure Setup" above.
+
 1. Ensure you have the AWS CLI configured, working, and pointing to the default AWS
    account you wish to deploy to.
-2. [Install Terraform](https://www.terraform.io/downloads.html) 0.12 or newer
-   (Recommendation is to install via Choco for Windows/Homebrew for macOS/package managers for
-   *nix)
-3. Run the Build step above
-4. `cd` to the `terraform` folder in this repo
-5. Create an S3 bucket to store Terraform's statefile: `aws s3api create-bucket --bucket tf-coepi-backend-bucket --region us-east-1`
-6. Run `terraform init -backend-config="region=us-east-1"` to tell Terraform to
-   use the state bucket you created in `us-east-1`
-7. Run `terraform plan` to see what changes will be applied to
+2. Ensure you've run the "Build" step above
+3. `cd` to the `terraform` folder in this repo
+4. Run `terraform plan` to see what changes will be applied to
    your AWS account
-8. Run `terraform apply -auto-approve` to make the changes and deploy the
+5. Run `terraform apply -auto-approve` to make the changes and deploy the
    server.
-9. When the Terraform scripts are updated or you wish to redeploy, repeat steps
+6. When the Terraform scripts are updated or you wish to redeploy, repeat steps
    7 and 8.
 
 The API Gateway root URL will be echoed to the shell, and you can CURL the

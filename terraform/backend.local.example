@@ -1,0 +1,5 @@
+# Copy this file to `backend.local` and update with the S3 bucket name you're using to store
+# Terraform state
+
+bucket = "tf-coepi-backend-bucket"
+region = "us-east-1"
