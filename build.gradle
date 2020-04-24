@@ -22,6 +22,13 @@ version '1.0.0'
 
 repositories {
     mavenCentral()
+    maven {
+        url 'http://dynamodb-local.s3-website-us-west-2.amazonaws.com/release'
+    }
+}
+
+configurations {
+    dynamodb
 }
 
 dependencies {
@@ -39,9 +46,22 @@ dependencies {
 
     testImplementation(
             'org.assertj:assertj-core:3.12.2',
-            'org.junit.jupiter:junit-jupiter-api:5.4.2'
+            'org.junit.jupiter:junit-jupiter-api:5.4.2',
+            'com.amazonaws:DynamoDBLocal:1.11.477'
     )
     testRuntimeOnly('org.junit.jupiter:junit-jupiter-engine:5.4.2')
+    dynamodb fileTree (dir: 'lib', include: ["*.dylib", "*.so", "*.dll"])
+    dynamodb 'com.amazonaws:DynamoDBLocal:1.11.477'
+
+    task copyNativeDeps(type: Copy) {
+        from configurations.dynamodb
+        into "$project.buildDir/libs/"
+    }
+
+    test.dependsOn copyNativeDeps
+    test.doFirst {
+        systemProperty "java.library.path", "./build/libs"
+    }
 }
 
 // TODO: Use a gradle plugin to generate models, example (https://github.com/Yelp/swagger-gradle-codegen).
