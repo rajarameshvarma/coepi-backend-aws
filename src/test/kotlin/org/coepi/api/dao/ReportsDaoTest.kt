@@ -3,6 +3,7 @@ package org.coepi.api.dao
 import org.assertj.core.api.Assertions
 import org.coepi.api.base.LocalDynamoDB
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.nio.charset.Charset
 import java.time.Instant
@@ -18,7 +19,7 @@ import java.util.*
  * Until then, don't expect them to succeed, just use them as documentation
  */
 
-//@Disabled
+@Disabled
 class ReportsDaoTest {
 
     private val dao: ReportsDao = ReportsDao()
