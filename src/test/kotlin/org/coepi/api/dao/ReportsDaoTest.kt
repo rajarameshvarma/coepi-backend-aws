@@ -1,13 +1,8 @@
 package org.coepi.api.dao
 
-import com.amazonaws.client.builder.AwsClientBuilder
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder
-import com.amazonaws.services.dynamodbv2.document.DynamoDB
-import com.amazonaws.services.dynamodbv2.local.main.ServerRunner
-import com.amazonaws.services.dynamodbv2.model.*
 import org.assertj.core.api.Assertions
+import org.coepi.api.base.LocalDynamoDB
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.nio.charset.Charset
 import java.time.Instant
@@ -23,7 +18,7 @@ import java.util.*
  * Until then, don't expect them to succeed, just use them as documentation
  */
 
-@Disabled
+//@Disabled
 class ReportsDaoTest {
 
     private val dao: ReportsDao = ReportsDao()
@@ -31,39 +26,14 @@ class ReportsDaoTest {
     val reportData = "foobar".toByteArray(Charset.defaultCharset())
 
     companion object{
-
-        val LOCAL_URL= "http://localhost:9000";
-        val REGION = "us-west-2"
-
         @BeforeAll
         @JvmStatic
-        internal fun startDynamoDb(){
-            System.setProperty("sqlite4java.library.path", "./build/libs")
-            val server = ServerRunner.createServerFromCommandLineArgs(arrayOf("-inMemory", "-port", "9000"))
-            server.start();
-
-            val dynamoClient = AmazonDynamoDBClientBuilder.standard()
-                    .withEndpointConfiguration(AwsClientBuilder.EndpointConfiguration(LOCAL_URL, REGION))
-                    .build();
-            val dynamoDb = DynamoDB(dynamoClient)
-
-            val table = dynamoDb.createTable(
-                    "Reports",
-                    listOf(
-                            KeySchemaElement("did", KeyType.HASH),
-                            KeySchemaElement("reportTimestamp", KeyType.RANGE)
-                    ),
-                    listOf(
-                            AttributeDefinition("did", ScalarAttributeType.N),
-                            AttributeDefinition("reportTimestamp", ScalarAttributeType.S)
-                    ),
-                    ProvisionedThroughput(10L, 10L)
-            )
-
-            table.waitForActive()
+        fun setup() {
+            // Start dynamoDb before the tests are executed
+            var localDb  = LocalDynamoDB();
+            localDb.startDynamoDb();
         }
     }
-
 
     @Test
     fun addReport_sanity() {

@@ -62,6 +62,9 @@ dependencies {
     test.doFirst {
         systemProperty "java.library.path", "./build/libs"
     }
+    test {
+        useJUnitPlatform()
+    }
 }
 
 // TODO: Use a gradle plugin to generate models, example (https://github.com/Yelp/swagger-gradle-codegen).
