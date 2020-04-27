@@ -1,14 +1,14 @@
 package org.coepi.api.base
 
-import com.amazonaws.AmazonServiceException
 import com.amazonaws.client.builder.AwsClientBuilder
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper
-import com.amazonaws.services.dynamodbv2.document.DynamoDB
 import com.amazonaws.services.dynamodbv2.local.main.ServerRunner
-import com.amazonaws.services.dynamodbv2.model.*
-import org.coepi.api.dao.ReportsDaoTest
+import com.amazonaws.services.dynamodbv2.model.AttributeValue
+import com.amazonaws.services.dynamodbv2.model.GetItemRequest
+import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput
+import org.coepi.api.models.Report
 
 class LocalDynamoDB {
 
@@ -33,29 +33,22 @@ class LocalDynamoDB {
      * TODO: Make it generic to create table based on class name passed to this method.
      */
     private fun createTable(ddb: AmazonDynamoDB, ddbMapper: DynamoDBMapper){
-        val request = ddbMapper.generateCreateTableRequest(ReportsTableTest::class.java)
+        val request = ddbMapper.generateCreateTableRequest(Report::class.java)
                 .withProvisionedThroughput(ProvisionedThroughput(10, 10))
-        try{
-            ddb.createTable(request)
-            println("Created Reports table for test")
-            //fireTestQuery(ddb) // TODO: Invoke helper method to check the vales in the initialized table
-        } catch (ex: AmazonServiceException){
-            println(ex.errorMessage)
-        }
+        ddb.createTable(request)
+        println("Created Reports table for test")
+        //fireTestQuery(ddb) // TODO: Invoke helper method to check the vales in the initialized table
     }
 
-    private fun fireTestQuery(ddb: AmazonDynamoDB){
-        val key = HashMap<String, AttributeValue>();
+    private fun fireTestQuery(ddb: AmazonDynamoDB) {
+        val key = HashMap<String, AttributeValue>()
         val request = GetItemRequest()
                 .withKey(key)
                 .withTableName("Report")
-        try{
-            val item = ddb.getItem(request)
-            if(item != null){
-                println(item)
-            }
-        }catch (ex: AmazonServiceException){
-            println(ex.errorMessage)
+
+        val item = ddb.getItem(request)
+        if(item != null){
+            println(item)
         }
     }
 }
