@@ -1,1 +1,6 @@
 rootProject.name = 'coepi-backend-kotlin'
+
+include(
+        ":api-aws-lambda",
+        ":core"
+)

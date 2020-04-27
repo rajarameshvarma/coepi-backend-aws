@@ -1,0 +1,33 @@
+plugins {
+    id("project-defaults")
+}
+
+configurations {
+    dynamodb
+}
+
+repositories {
+    maven {
+        url("http://dynamodb-local.s3-website-us-west-2.amazonaws.com/release")
+    }
+}
+
+dependencies {
+    implementation("com.amazonaws:aws-java-sdk-dynamodb")
+    implementation("org.apache.commons:commons-lang3:3.10")
+
+    testImplementation("com.amazonaws:DynamoDBLocal:1.11.477")
+
+    dynamodb(fileTree(dir: 'lib', include: ["*.dylib", "*.so", "*.dll"]))
+    dynamodb("com.amazonaws:DynamoDBLocal:1.11.477")
+}
+
+task copyNativeDeps(type: Copy) {
+    from(configurations.dynamodb)
+    into("${project.buildDir}/libs")
+}
+
+test.dependsOn(copyNativeDeps)
+test.doFirst {
+    systemProperty("java.library.path", "./build/libs")
+}

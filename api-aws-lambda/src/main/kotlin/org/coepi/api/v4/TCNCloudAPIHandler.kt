@@ -27,15 +27,6 @@ class TCNCloudAPIHandler: RequestHandler<APIGatewayProxyRequestEvent, APIGateway
         const val DATE_KEY = "date"
         const val INTERVAL_NUMBER_KEY = "intervalNumber"
         const val INTERVAL_LENGTH_MS_KEY = "intervalLengthMs"
-        const val INTERVAL_LENGTH_MS: Long = 6 * 3600 * 1000
-
-        fun generateIntervalForCurrentTime(): Long {
-            return generateIntervalForTimestamp(Instant.now().toEpochMilli())
-        }
-
-        fun generateIntervalForTimestamp(timestamp: Long): Long {
-            return timestamp / INTERVAL_LENGTH_MS
-        }
     }
 
     override fun handleRequest(input: APIGatewayProxyRequestEvent, context: Context): APIGatewayProxyResponseEvent {
@@ -113,9 +104,9 @@ class TCNCloudAPIHandler: RequestHandler<APIGatewayProxyRequestEvent, APIGateway
                 }
                 val intervalLengthMs = queryParameters[INTERVAL_LENGTH_MS_KEY]?.toLong()
 
-                if (intervalLengthMs != INTERVAL_LENGTH_MS) {
+                if (intervalLengthMs != Intervals.INTERVAL_LENGTH_MS) {
                     throw UnexpectedIntervalLengthException("$intervalLengthMs is invalid for the date " +
-                            "$DATE_KEY. Please use $INTERVAL_LENGTH_MS to calculate $INTERVAL_NUMBER_KEY")
+                            "$DATE_KEY. Please use ${Intervals.INTERVAL_LENGTH_MS} to calculate $INTERVAL_NUMBER_KEY")
                 }
             }
         } catch (ex: DateTimeParseException) {

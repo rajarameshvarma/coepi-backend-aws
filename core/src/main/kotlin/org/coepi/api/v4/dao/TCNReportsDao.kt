@@ -32,7 +32,7 @@ class TCNReportsDao {
 
         val reportId = generateReportId(date, intervalNumber)
         val randomId = UUID.randomUUID().toString()
-        val reportRecord = TCNReportRecord(reportId, randomId,  timestamp, reportData)
+        val reportRecord = TCNReportRecord(reportId, randomId, timestamp, reportData)
         this.dynamoMapper.save(reportRecord)
         return reportRecord
     }
