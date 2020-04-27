@@ -18,10 +18,14 @@ Requirements:
 
 All infrastructure concerns are managed by [Terraform](https://terraform.io/) (v0.12+). You can either download Terraform from their site, or install it with [Choco](https://chocolatey.org/) (Windows), [brew](https://brew.sh) (macOS), or your Linux distribution's package manager.
 
-Next you will want to create an S3 bucket to store your Terraform [remote state](https://www.terraform.io/docs/backends/index.html). This will need to be uniquely named, and should be private and encrypted. A script has been provided to do this for you:
+Terraform tracks the [state of your infrastructure](https://www.terraform.io/docs/state/index.html) in a `tfstate` file, which can be stored either locally or remotely. While we recommend remote state, both options are documented here for convenience.
 
-```shell
-TFSTATE_BUCKET=<your bucket name here> ./scripts/terraform_setup.sh
+#### Option 1: Remote Terraform State (Recommended)
+
+First, create an S3 bucket to store your Terraform [remote state](https://www.terraform.io/docs/backends/index.html). This will need to be uniquely named, and should be private and encrypted. A script has been provided to do this for you:
+
+```shell script
+TFSTATE_BUCKET=your_bucket_name_here ./scripts/terraform_setup.sh
 ```
 
 (If you're not sure what to name your bucket, try something like `<your github username>-tcn-infra`.)
@@ -36,8 +40,16 @@ _(The `backend.local` file is specific to your development environment and is ig
 
 Finally, initialize your Terraform project:
 
-```shell
+```shell script
 terraform init -backend-config=backend.local
+```
+
+#### Option 2: Local Terraform State
+
+In a terminal, navigate to `./terraform` and run the following to initialize your Terraform state:
+
+```shell script
+terraform init
 ```
 
 ## Build
