@@ -1,16 +1,15 @@
 package org.coepi.api.v4
 
 import com.amazonaws.services.lambda.runtime.Context
-import com.amazonaws.services.lambda.runtime.LambdaLogger
 import com.amazonaws.services.lambda.runtime.RequestHandler
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.coepi.api.CoEpiClientException
 import org.coepi.api.InvalidTCNSignatureException
 import org.coepi.api.TCNClientException
 import org.coepi.api.UnexpectedIntervalLengthException
 import org.coepi.api.v4.dao.TCNReportsDao
+import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -22,7 +21,7 @@ class TCNCloudAPIHandler: RequestHandler<APIGatewayProxyRequestEvent, APIGateway
 
     private val reportsDao: TCNReportsDao = TCNReportsDao()
     private val objectMapper: ObjectMapper = ObjectMapper()
-    private var logger: LambdaLogger? = null
+    private val logger = LoggerFactory.getLogger(TCNCloudAPIHandler::class.java)
 
     companion object {
         const val DATE_KEY = "date"
@@ -40,20 +39,18 @@ class TCNCloudAPIHandler: RequestHandler<APIGatewayProxyRequestEvent, APIGateway
     }
 
     override fun handleRequest(input: APIGatewayProxyRequestEvent, context: Context): APIGatewayProxyResponseEvent {
-        logger = context.logger
-
-        logger?.log("Processing request: ${context.awsRequestId}. " +
+        logger.info("Processing request: ${context.awsRequestId}. " +
                 "Query params: ${input.queryStringParameters}. " +
                 "Body: ${input.body}")
         try {
             if (input.httpMethod == "GET") {
-                logger?.log("Handling GET Request for :${input.path}. ReqId: ${context.awsRequestId}")
+                logger.info("Handling GET Request for :${input.path}. ReqId: ${context.awsRequestId}")
                 return handleGetReport(input)
             }
-            logger?.log("Handling POST Request for :${input.path}. ReqId: ${context.awsRequestId}")
+            logger.info("Handling POST Request for :${input.path}. ReqId: ${context.awsRequestId}")
             return handlePostReport(input)
         } catch (ex: Exception) {
-            logger?.log("Failed to serve request: ${context.awsRequestId}. Cause: ${ex.message}")
+            logger.info("Failed to serve request: ${context.awsRequestId}. Cause: ${ex.message}")
             return APIGatewayProxyResponseEvent()
                     .withStatusCode(500)
                     .withBody("CoEpi Service Internal Failure")
@@ -70,20 +67,23 @@ class TCNCloudAPIHandler: RequestHandler<APIGatewayProxyRequestEvent, APIGateway
             val date = queryParams.first.orElse(LocalDate.now())
             val intervalNumber = queryParams.second.orElse(generateIntervalForCurrentTime())
 
+            logger.info("Querying reports with date: $date and intervalNumber: $intervalNumber")
             val reports = reportsDao.queryReports(date, intervalNumber)
                     .map {
                         record -> Base64.getEncoder().encodeToString(record.report)
                     }
             body = objectMapper.writeValueAsString(reports)
             statusCode = 200
+            logger.info("Number of reports retrieved successfully: ${reports.size}")
         } catch (ex: TCNClientException) {
+            logger.info("Failed to retrieve report due to client error", ex)
             body = ex.message
             statusCode = 400
         } catch (ex: UnexpectedIntervalLengthException) {
+            logger.info("Failed to retrieve report due to bad intervalLength used by client", ex)
             body = ex.message
             statusCode = 401
         }
-
         return APIGatewayProxyResponseEvent()
                 .withStatusCode(statusCode)
                 .withBody(body)
@@ -126,7 +126,7 @@ class TCNCloudAPIHandler: RequestHandler<APIGatewayProxyRequestEvent, APIGateway
         }
 
         if (intervalNumber.isPresent && intervalNumber.get() < 0) {
-            throw CoEpiClientException("$INTERVAL_LENGTH_MS_KEY should be positive")
+            throw TCNClientException("$INTERVAL_LENGTH_MS_KEY should be positive")
         }
         return Pair(date, intervalNumber)
     }
@@ -140,14 +140,17 @@ class TCNCloudAPIHandler: RequestHandler<APIGatewayProxyRequestEvent, APIGateway
 
             // TODO: Validate reportData and signature
             reportsDao.addReport(reportData, date, intervalNumber, timestamp)
+            logger.info("Successfully added report with intervalNumber: $intervalNumber and date: $date")
 
             APIGatewayProxyResponseEvent()
                     .withStatusCode(200)
         } catch (ex: InvalidTCNSignatureException) {
+            logger.info("Failed to put report due to illegal TCN Signature", ex)
             APIGatewayProxyResponseEvent()
                     .withBody(ex.message)
                     .withStatusCode(401)
         } catch (ex: IllegalArgumentException) {
+            logger.info("Failed to put report due to client error", ex)
             APIGatewayProxyResponseEvent()
                     .withBody(ex.message)
                     .withStatusCode(400)

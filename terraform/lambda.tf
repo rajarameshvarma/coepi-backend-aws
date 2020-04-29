@@ -22,18 +22,6 @@ locals {
   jarfile = "../build/libs/coepi-backend-kotlin-1.0.0-all.jar"
 }
 
-resource "aws_lambda_function" "coepi_lambda" {
-  filename      = local.jarfile
-  function_name = "CoEpiServerLambda"
-  role          = aws_iam_role.coepi_lambda_backend_role.arn
-  handler       = "org.coepi.api.CoEpiHandler::handleRequest"
-
-  source_code_hash = filebase64sha256(local.jarfile)
-  memory_size      = 512
-  timeout          = 10
-  runtime          = "java11"
-}
-
 resource "aws_lambda_function" "tcn_lambda" {
   filename      = local.jarfile
   function_name = "TCNServerLambda"
@@ -89,7 +77,6 @@ resource "aws_iam_policy" "lambda_dynamodb_access" {
                     "dynamodb:DescribeTableReplicaAutoScaling"
                 ],
                 "Resource": [
-                    "${aws_dynamodb_table.coapi-dynamodb-table.arn}",
                     "${aws_dynamodb_table.tcn-dynamodb-table.arn}"
                 ]
             },
@@ -103,7 +90,6 @@ resource "aws_iam_policy" "lambda_dynamodb_access" {
                     "dynamodb:ListStreams"
                 ],
                 "Resource": [
-                    "${aws_dynamodb_table.coapi-dynamodb-table.arn}",
                     "${aws_dynamodb_table.tcn-dynamodb-table.arn}"
                 ]
             }
@@ -120,17 +106,6 @@ resource "aws_iam_role_policy_attachment" "lambda_dynamodb_policy_attachment" {
 resource "aws_iam_role_policy_attachment" "lambda_cloudwatch_policy_attachment" {
   role       = aws_iam_role.coepi_lambda_backend_role.name
   policy_arn = var.cloudwatch_policy_arn
-}
-
-resource "aws_lambda_permission" "lambda_apigateway" {
-  statement_id  = "AllowAPIGatewayInvoke"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.coepi_lambda.function_name
-  principal     = "apigateway.amazonaws.com"
-
-  # The "/*/*" portion grants access from any method on any resource
-  # within the API Gateway REST API.
-  source_arn = "${aws_api_gateway_rest_api.coepi_api_gateway.execution_arn}/*/*"
 }
 
 resource "aws_lambda_permission" "tcn_lambda_apigateway" {
