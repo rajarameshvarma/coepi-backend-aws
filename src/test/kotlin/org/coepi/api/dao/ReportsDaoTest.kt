@@ -1,6 +1,8 @@
 package org.coepi.api.dao
 
 import org.assertj.core.api.Assertions
+import org.coepi.api.base.LocalDynamoDB
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.nio.charset.Charset
@@ -16,12 +18,23 @@ import java.util.*
  *
  * Until then, don't expect them to succeed, just use them as documentation
  */
+
 @Disabled
 class ReportsDaoTest {
 
     private val dao: ReportsDao = ReportsDao()
     val cenKeys = arrayOf("foo", "bar")
     val reportData = "foobar".toByteArray(Charset.defaultCharset())
+
+    companion object{
+        @BeforeAll
+        @JvmStatic
+        fun setup() {
+            // Start dynamoDb before the tests are executed
+            var localDb  = LocalDynamoDB();
+            localDb.startDynamoDb();
+        }
+    }
 
     @Test
     fun addReport_sanity() {
