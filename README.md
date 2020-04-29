@@ -1,4 +1,4 @@
-# CoEpi Server on AWS
+# TCN Server on AWS
 
 This repo contains server and infrastructure code for deploying and running
 CoEpi Cloud API on AWS.
@@ -89,14 +89,6 @@ curl -X POST https://e6f2c4llfk.execute-api.us-west-1.amazonaws.com/v4/tcnreport
 curl -X GET https://e6f2c4llfk.execute-api.us-west-1.amazonaws.com/v4/tcnreport
 ```
 
-#### v3
-```sh
-curl -X POST https://q69c4m2myb.execute-api.us-west-2.amazonaws.com/v3/cenreport -d '{ "report": "dWlyZSBhdXRob3JgdsF0aW9uLgo=", "cenKeys": [ "baz", "das" ]}'
-
-curl -X GET https://q69c4m2myb.execute-api.us-west-2.amazonaws.com/v3/cenreport
-[{"did":"2020-04-06","reportTimestamp":1586157667433,"report":"dWlyZSBhdXRob3JpemF0aW9uLgo=","cenKeys":["bar","foo"]},{"did":"2020-04-06","reportTimestamp":1586158348099,"report":"dWlyZSBhdXRob3JpemF0aW9uLgo=","cenKeys":["bar","foo"]},{"did":"2020-04-06","reportTimestamp":1586158404001,"report":"dWlyZSBhdXRob3JgdsF0aW9uLgo=","cenKeys":["baz","das"]}]
-```
-
 ## Running
 
 For running the server on your developer AWS account, follow the steps
@@ -120,11 +112,3 @@ Method | HTTP request | Description
 ------------- | ------------- | -------------
 [**tcnreportPost**](docs/DefaultApi.md#cenreportpost) | **POST** /tcnreport | Submit symptom or infection report following TCN 0.4.0 protocol
 [**tcnreportGet**](docs/DefaultApi.md#cenreporttimestamplowertimestampupperget) | **GET** /tcnreport?date={report_date}?intervalNumber={interval}?intervalLengthMs={interval_length_ms}| Returns a list of reports generated on the specified date and interval
-
-
-### v3
-Method | HTTP request | Description
-------------- | ------------- | -------------
-[**cenreportPost**](docs/DefaultApi.md#cenreportpost) | **POST** /cenreport | Submit symptom or infection report
-[**cenreportTimestampLowerTimestampUpperGet**](docs/DefaultApi.md#cenreporttimestamplowertimestampupperget) | **GET** /cenreport?timestampLower={tsLower}&timestampUpper={tsUpper} | Returns a list of reports generated between a timestamp range
-
