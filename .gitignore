@@ -2,7 +2,7 @@
 .gradle*
 .swagger-codegen*
 Dockerfile*
-/build/
+build/
 
 # Terraform
 

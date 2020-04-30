@@ -1,6 +1,6 @@
 package org.coepi.api.v4.dao
 
-import org.coepi.api.v4.TCNCloudAPIHandler
+import org.coepi.api.v4.generateIntervalForTimestamp
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
@@ -19,7 +19,7 @@ class TCNReportsDaoTest {
     fun addReport_sanity() {
         val date = LocalDate.now(ZoneId.of("UTC"))
         val now = Instant.now().toEpochMilli()
-        val intervalNumber = TCNCloudAPIHandler.generateIntervalForTimestamp(now)
+        val intervalNumber = generateIntervalForTimestamp(now)
         dao.addReport(reportData, date, intervalNumber, now)
         val reports = dao.queryReports(date, intervalNumber)
         Assertions.assertTrue(reports.isNotEmpty())

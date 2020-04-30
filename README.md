@@ -58,13 +58,13 @@ terraform init
 ./gradlew build
 ```
 
-Then run:
+Then build the shadow jar for the Lambda:
 
 ```sh
-./gradlew shadowJar
+./gradlew api-aws-lambda:shadowJar
 ```
 
-## AWS Deploy via Terraform
+## Deploy
 
 These steps assume you have already initialized Terraform as described in "Infrastructure Setup" above.
 

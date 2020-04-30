@@ -19,7 +19,7 @@ EOF
 }
 
 locals {
-  jarfile = "../build/libs/coepi-backend-kotlin-1.0.0-all.jar"
+  jarfile = "../api-aws-lambda/build/libs/api-aws-lambda-all.jar"
 }
 
 resource "aws_lambda_function" "tcn_lambda" {

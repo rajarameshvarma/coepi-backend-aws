@@ -1,0 +1,21 @@
+plugins {
+    id("project-defaults")
+    id("com.github.johnrengelman.shadow") version "5.2.0"
+}
+
+dependencies {
+    implementation(project(":core"))
+
+    implementation("com.amazonaws:aws-lambda-java-core:1.2.0")
+    implementation("com.amazonaws:aws-lambda-java-events:2.2.7")
+    implementation("com.amazonaws:aws-lambda-java-log4j2:1.1.0")
+    implementation("com.fasterxml.jackson.core:jackson-annotations")
+    implementation("com.fasterxml.jackson.core:jackson-core")
+    implementation("com.fasterxml.jackson.core:jackson-databind")
+    implementation("commons-io:commons-io:2.6")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.20.0")
+}
+
+shadowJar {
+    exclude "**/Log4j2Plugins.dat"
+}
