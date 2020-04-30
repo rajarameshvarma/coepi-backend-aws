@@ -5,23 +5,35 @@ import com.amazonaws.services.lambda.runtime.RequestHandler
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent
 import com.fasterxml.jackson.databind.ObjectMapper
+import java.time.Clock
+import java.time.LocalDate
+import java.time.format.DateTimeParseException
+import java.util.*
 import org.coepi.api.InvalidTCNSignatureException
 import org.coepi.api.TCNClientException
 import org.coepi.api.UnexpectedIntervalLengthException
+import org.coepi.api.common.orNull
 import org.coepi.api.v4.dao.TCNReportsDao
+import org.coepi.api.v4.reports.TCNReportService
+import org.coepi.api.v4.reports.TCNReportServiceImpl
 import org.slf4j.LoggerFactory
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneId
-import java.time.format.DateTimeParseException
-import java.util.*
 
-
-class TCNCloudAPIHandler: RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
-
-    private val reportsDao: TCNReportsDao = TCNReportsDao()
-    private val objectMapper: ObjectMapper = ObjectMapper()
+class TCNCloudAPIHandler(
+    private val reportService: TCNReportService,
+    private val objectMapper: ObjectMapper
+) : RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
     private val logger = LoggerFactory.getLogger(TCNCloudAPIHandler::class.java)
+
+    /**
+     * Zero-arg constructor to initialize the class in Lambda.
+     */
+    constructor() : this(
+        reportService = TCNReportServiceImpl(
+            clock = Clock.systemUTC(),
+            reportsDao = TCNReportsDao()
+        ),
+        objectMapper = ObjectMapper()
+    )
 
     companion object {
         const val DATE_KEY = "date"
@@ -53,13 +65,11 @@ class TCNCloudAPIHandler: RequestHandler<APIGatewayProxyRequestEvent, APIGateway
         var body: String?
 
         try {
-            val queryParams = parseQueryParameters(input)
+            val (maybeDate, maybeInterval) = parseQueryParameters(input)
 
-            val date = queryParams.first.orElse(LocalDate.now())
-            val intervalNumber = queryParams.second.orElse(generateIntervalForCurrentTime())
+            logger.info("Querying reports with date: $maybeDate and intervalNumber: $maybeInterval")
 
-            logger.info("Querying reports with date: $date and intervalNumber: $intervalNumber")
-            val reports = reportsDao.queryReports(date, intervalNumber)
+            val reports = reportService.getReports(maybeDate.orNull(), maybeInterval.orNull())
                     .map {
                         record -> Base64.getEncoder().encodeToString(record.report)
                     }
@@ -125,13 +135,9 @@ class TCNCloudAPIHandler: RequestHandler<APIGatewayProxyRequestEvent, APIGateway
     fun handlePostReport(input: APIGatewayProxyRequestEvent): APIGatewayProxyResponseEvent {
         return try {
             val reportData = Base64.getDecoder().decode(input.body)
-            val timestamp = Instant.now().toEpochMilli()
-            val date = LocalDate.now(ZoneId.of("UTC"))
-            val intervalNumber = generateIntervalForTimestamp(timestamp)
 
-            // TODO: Validate reportData and signature
-            reportsDao.addReport(reportData, date, intervalNumber, timestamp)
-            logger.info("Successfully added report with intervalNumber: $intervalNumber and date: $date")
+            val savedReport = reportService.saveReport(reportData)
+            logger.info("Successfully added report ${savedReport.reportId}")
 
             APIGatewayProxyResponseEvent()
                     .withStatusCode(200)
