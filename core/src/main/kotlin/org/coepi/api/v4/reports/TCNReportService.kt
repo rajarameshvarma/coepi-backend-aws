@@ -6,6 +6,7 @@ import org.coepi.api.common.time.toUtcLocalDate
 import org.coepi.api.v4.dao.TCNReportRecord
 import org.coepi.api.v4.dao.TCNReportsDao
 import org.coepi.api.v4.toInterval
+import java.nio.ByteBuffer
 
 interface TCNReportService {
     /**
@@ -16,7 +17,7 @@ interface TCNReportService {
 
     fun getReports(date: LocalDate, intervalNumber: Long): List<TCNReportRecord>
 
-    fun saveReport(reportData: ByteArray): TCNReportRecord
+    fun saveReport(reportData: ByteBuffer): TCNReportRecord
 }
 
 class TCNReportServiceImpl(
@@ -41,12 +42,12 @@ class TCNReportServiceImpl(
         )
     }
 
-    override fun saveReport(reportData: ByteArray): TCNReportRecord {
+    override fun saveReport(reportData: ByteBuffer): TCNReportRecord {
         val now = clock.instant()
 
         // TODO: Validate reportData and signature
         return reportsDao.addReport(
-            reportData = reportData,
+            reportData = reportData.array(),
             date = now.toUtcLocalDate(),
             intervalNumber = now.toInterval(),
             timestamp = now.toEpochMilli()

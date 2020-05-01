@@ -8,7 +8,9 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import org.assertj.core.api.Assertions.assertThat
+import org.coepi.api.Fixtures
 import org.coepi.api.common.time.toUtcLocalDate
+import org.coepi.api.common.toByteBuffer
 import org.coepi.api.v4.dao.TCNReportRecord
 import org.coepi.api.v4.dao.TCNReportsDao
 import org.coepi.api.v4.toInterval
@@ -63,13 +65,13 @@ class TCNReportServiceImplTest {
     @Test
     fun `saveReport should save the report based on the current time`() {
         // GIVEN
-        val reportData = ByteArray(42) { it.toByte() }
+        val reportData = Fixtures.someBytes()
 
         val expectedSavedReport = mockk<TCNReportRecord>()
         every { reportsDao.addReport(any(), any(), any(), any()) } returns expectedSavedReport
 
         // WHEN
-        val actualSavedReport = subject.saveReport(reportData)
+        val actualSavedReport = subject.saveReport(reportData.toByteBuffer())
 
         // THEN
         verify {
