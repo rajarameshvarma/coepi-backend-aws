@@ -8,29 +8,21 @@ import org.coepi.api.v4.dao.TCNReportsDao
 import org.coepi.api.v4.toInterval
 import java.nio.ByteBuffer
 
-interface TCNReportService {
+class TCNReportService(
+    private val clock: Clock,
+    private val reportsDao: TCNReportsDao
+) {
     /**
      * Return a list of TCN reports. If [maybeDate] is null, the current UTC date will be used. If
      * [maybeIntervalNumber] is null, the current interval will be used.
      */
-    fun getReports(maybeDate: LocalDate?, maybeIntervalNumber: Long?): List<TCNReportRecord>
-
-    fun getReports(date: LocalDate, intervalNumber: Long): List<TCNReportRecord>
-
-    fun saveReport(reportData: ByteBuffer): TCNReportRecord
-}
-
-class TCNReportServiceImpl(
-    private val clock: Clock,
-    private val reportsDao: TCNReportsDao
-) : TCNReportService {
-    override fun getReports(
+    fun getReports(
         date: LocalDate,
         intervalNumber: Long
     ): List<TCNReportRecord> =
         reportsDao.queryReports(date, intervalNumber)
 
-    override fun getReports(
+    fun getReports(
         maybeDate: LocalDate?,
         maybeIntervalNumber: Long?
     ): List<TCNReportRecord> {
@@ -42,7 +34,7 @@ class TCNReportServiceImpl(
         )
     }
 
-    override fun saveReport(reportData: ByteBuffer): TCNReportRecord {
+    fun saveReport(reportData: ByteBuffer): TCNReportRecord {
         val now = clock.instant()
 
         // TODO: Validate reportData and signature

@@ -16,14 +16,14 @@ import org.coepi.api.v4.dao.TCNReportsDao
 import org.coepi.api.v4.toInterval
 import org.junit.jupiter.api.Test
 
-class TCNReportServiceImplTest {
+class TCNReportServiceTest {
 
     private val now = Instant.parse("2000-11-22T13:44:55.666Z")
 
     private val clock = Clock.fixed(now, ZoneId.of("UTC"))
     private val reportsDao = mockk<TCNReportsDao>()
 
-    private val subject = TCNReportServiceImpl(clock, reportsDao)
+    private val subject = TCNReportService(clock, reportsDao)
 
     @Test
     fun `getReports should use provided non-null arguments`() {

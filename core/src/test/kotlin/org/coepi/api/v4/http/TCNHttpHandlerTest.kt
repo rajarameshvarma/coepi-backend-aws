@@ -12,11 +12,11 @@ import org.junit.jupiter.api.Test
 import java.time.LocalDate
 import java.util.*
 
-class TCNHttpHandlerImplTest {
+class TCNHttpHandlerTest {
 
     val reportService = mockk<TCNReportService>()
 
-    val subject = TCNHttpHandlerImpl(ObjectMapper(), reportService)
+    val subject = TCNHttpHandler(ObjectMapper(), reportService)
 
     @Test
     fun `getReport should return Ok with valid inputs`() {

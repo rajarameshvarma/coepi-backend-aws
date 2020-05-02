@@ -15,19 +15,13 @@ import java.time.LocalDate
 import java.time.format.DateTimeParseException
 import java.util.*
 
-interface TCNHttpHandler {
-    fun getReport(parameters: Map<String, String>): HttpResponse
-
-    fun postReport(body: ByteBuffer): HttpResponse
-}
-
-class TCNHttpHandlerImpl(
+class TCNHttpHandler(
     private val objectMapper: ObjectMapper,
     private val reportService: TCNReportService
-) : TCNHttpHandler {
+) {
     private val logger = LoggerFactory.getLogger(this.javaClass)
 
-    override fun getReport(parameters: Map<String, String>): HttpResponse {
+    fun getReport(parameters: Map<String, String>): HttpResponse {
         return try {
             val (maybeDate, maybeInterval) = parseQueryParameters(parameters)
 
@@ -51,7 +45,7 @@ class TCNHttpHandlerImpl(
         }
     }
 
-    override fun postReport(body: ByteBuffer): HttpResponse =
+    fun postReport(body: ByteBuffer): HttpResponse =
         try {
             val reportData = body.base64Decode()
             val savedReport = reportService.saveReport(reportData)

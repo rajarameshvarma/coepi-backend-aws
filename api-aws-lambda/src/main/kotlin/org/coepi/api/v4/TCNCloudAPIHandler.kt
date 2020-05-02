@@ -11,8 +11,7 @@ import org.coepi.api.common.toByteBuffer
 import org.coepi.api.v4.dao.TCNReportsDao
 import org.coepi.api.v4.http.HttpResponse
 import org.coepi.api.v4.http.TCNHttpHandler
-import org.coepi.api.v4.http.TCNHttpHandlerImpl
-import org.coepi.api.v4.reports.TCNReportServiceImpl
+import org.coepi.api.v4.reports.TCNReportService
 import org.slf4j.LoggerFactory
 
 class TCNCloudAPIHandler(
@@ -24,9 +23,9 @@ class TCNCloudAPIHandler(
      * Zero-arg constructor to initialize the class in Lambda.
      */
     constructor() : this(
-        handler = TCNHttpHandlerImpl(
+        handler = TCNHttpHandler(
             objectMapper = ObjectMapper(),
-            reportService = TCNReportServiceImpl(
+            reportService = TCNReportService(
                 clock = Clock.systemUTC(),
                 reportsDao = TCNReportsDao()
             )
