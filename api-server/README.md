@@ -5,10 +5,23 @@ A standalone frontend for the CoEpi Cloud API, suitable for deploying to Kuberne
 
 ## Getting Started
 
-The API server can be run locally from Gradle. Note you will need to have AWS configured correctly so that the service can access the DynamoDB table from your local machine.
+Prerequisites:
+
+- You have run the "Deploy" instructions from the [main project README](../README.md) (so that the Dynamo table exists)
+- Your local environment is configured with AWS credentials (so the server can access the Dynamo table)
+
+The API server can be run locally with Gradle:
 
 ```shell script
 ./gradlew api-server:run
+```
+
+You should now be able to interact with the server through HTTP clients such as `curl`:
+
+```shell script
+$ curl localhost:8080/v4/tcnreport -d 'SGVsbG8sIHlvdS4='
+$ curl localhost:8080/v4/tcnreport
+["SGVsbG8sIHlvdS4="]
 ```
 
 ## Deploy
