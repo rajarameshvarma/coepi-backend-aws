@@ -39,7 +39,7 @@ class TCNReportService(
 
         // TODO: Validate reportData and signature
         return reportsDao.addReport(
-            reportData = reportData.array(),
+            reportData = reportData,
             date = now.toUtcLocalDate(),
             intervalNumber = now.toInterval(),
             timestamp = now.toEpochMilli()
