@@ -12,3 +12,5 @@ fun ByteBuffer.decodeToString(): String = String(array())
 fun String.toByteBuffer(): ByteBuffer = ByteBuffer.wrap(toByteArray())
 
 fun ByteArray.toByteBuffer(): ByteBuffer = ByteBuffer.wrap(this)
+
+fun ByteArray?.orEmpty(): ByteArray = this ?: byteArrayOf()
