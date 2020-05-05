@@ -15,6 +15,7 @@ import org.coepi.api.v4.dao.TCNReportRecord
 import org.coepi.api.v4.dao.TCNReportsDao
 import org.coepi.api.v4.toInterval
 import org.junit.jupiter.api.Test
+import java.nio.ByteBuffer
 
 class TCNReportServiceTest {
 
@@ -65,13 +66,13 @@ class TCNReportServiceTest {
     @Test
     fun `saveReport should save the report based on the current time`() {
         // GIVEN
-        val reportData = Fixtures.someBytes()
+        val reportData = ByteBuffer.wrap(Fixtures.someBytes())
 
         val expectedSavedReport = mockk<TCNReportRecord>()
         every { reportsDao.addReport(any(), any(), any(), any()) } returns expectedSavedReport
 
         // WHEN
-        val actualSavedReport = subject.saveReport(reportData.toByteBuffer())
+        val actualSavedReport = subject.saveReport(reportData)
 
         // THEN
         verify {

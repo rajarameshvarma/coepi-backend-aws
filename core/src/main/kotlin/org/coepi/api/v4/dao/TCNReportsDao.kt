@@ -5,6 +5,7 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression
 import com.amazonaws.services.dynamodbv2.model.AttributeValue
 import org.apache.commons.lang3.Validate
+import java.nio.ByteBuffer
 import java.time.LocalDate
 import java.util.*
 
@@ -12,9 +13,8 @@ class TCNReportsDao {
     private val dynamoMapper: DynamoDBMapper
 
     companion object {
-        fun generateReportId(date: LocalDate, intervalNumber: Long): String {
-            return date.toString() + ":" + intervalNumber
-        }
+        fun generateReportId(date: LocalDate, intervalNumber: Long): String =
+            "$date:$intervalNumber"
     }
 
     init {
@@ -22,17 +22,17 @@ class TCNReportsDao {
         this.dynamoMapper = DynamoDBMapper(ddbClient)
     }
 
-    fun addReport(reportData: ByteArray,
+    fun addReport(reportData: ByteBuffer,
                   date: LocalDate,
                   intervalNumber: Long,
                   timestamp: Long): TCNReportRecord {
-        Validate.isTrue(reportData.isNotEmpty(), "reportData cannot be empty")
+        Validate.isTrue(reportData.capacity() > 0, "reportData cannot be empty")
         Validate.isTrue(intervalNumber > 0, "intervalNumber should be positive")
         Validate.isTrue(timestamp > 0, "timestamp needs to be positive")
 
         val reportId = generateReportId(date, intervalNumber)
         val randomId = UUID.randomUUID().toString()
-        val reportRecord = TCNReportRecord(reportId, randomId, timestamp, reportData)
+        val reportRecord = TCNReportRecord(reportId, randomId, timestamp, reportData.array())
         this.dynamoMapper.save(reportRecord)
         return reportRecord
     }

@@ -27,10 +27,10 @@ class TCNHttpHandler(
 
             logger.info("Querying reports with date: $maybeDate and intervalNumber: $maybeInterval")
 
-            val reports = reportService.getReports(maybeDate.orNull(), maybeInterval.orNull())
-                .map { record ->
-                    ByteBuffer.wrap(Base64.getEncoder().encode(record.report))
-                }
+            val reports =
+                reportService
+                    .getReports(maybeDate.orNull(), maybeInterval.orNull())
+                    .map { it.report }
 
             logger.info("Number of reports retrieved successfully: ${reports.size}")
 
