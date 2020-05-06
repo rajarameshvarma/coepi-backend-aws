@@ -1,0 +1,209 @@
+openapi: 3.0.3
+
+info:
+  description: This is the API model for unified contact tracing server that supports
+    storage and retrieval of reports and keys for various privacy-preserving contact tracing
+    protocols.
+
+    Below protocols are supported,
+
+    1. TCN (https://github.com/TCNCoalition/TCN/blob/main/README.md)
+       Versions, 0.4.0
+
+    2. Apple / Google Contact Tracing (https://www.apple.com/covid19/contacttracing)
+       Versions, 1.2
+
+  version: 0.5.0
+  title: Universal Contact Tracing Server
+  license:
+    name: MIT License
+    url: https://github.com/Co-Epi/data-models/blob/master/LICENSE
+
+paths:
+  /tcnreport/0.4.0:
+    post:
+      summary: Submit symptom or infection report
+      description: Users submit symptom / infection reports and reveal the secret TCN Key in their application
+        as bytes in format 'rvk || tck_{j1-1} || le_u16(j1) || le_u16(j2) || memo'. Details of the TCN protocol
+        can be found here, https://github.com/TCNCoalition/TCN/blob/main/README.md
+
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+              format: byte
+
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        uri: ${lambda_invoke_arn}
+        httpMethod: POST
+
+      responses:
+        '200':
+          description: The report was submitted successfully
+        '400':
+          description: The report is not encoded in the correct format
+        '401':
+          description: The report signature validation has failed
+        '500':
+          description: Internal Server Error
+
+    get:
+      summary: Returns a list of reports generated for a given interval number.
+
+      description: Interval number is a positive integer that corresponds to a specific fixed time interval and can
+        be calculated as (unix_epoch_time_seconds / time_interval_seconds).
+        Current value of time_interval_ms is (6 * 3600) or 6 hours. When not provided, returns the reports
+        corresponding to the latest interval batch.
+
+      parameters:
+      - in: query
+        name: intervalNumber
+        description: Positive integer that corresponds to a specific fixed time interval and can
+          be calculated as (unix_epoch_time_seconds / time_interval_seconds). When not provided, current
+          interval number is assumed.
+        required: false
+        schema:
+          type: integer
+          format: int64
+        example: 158874736
+      - in: query
+        name: intervalLength
+        description: The interval length in seconds used by the client to calculate intervalNumber.
+          The server will respond with a 401 if the interval length does not match the expected length.
+        required: false
+        schema:
+          type: integer
+          format: int64
+        example: 21600
+
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        uri: ${lambda_invoke_arn}
+        httpMethod: POST
+
+      responses:
+        '200':
+          description: List of infection/symptom reports generated during the specified intervalNumber
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  format: byte
+        '400':
+          description: Request Parameter Invalid
+        '401':
+          description: intervalLength is not valid for the specified intervalNumber
+        '500':
+          description: Internal Server Error
+
+  /diagnosiskeys/1.2:
+    post:
+      summary: Submit a list of diagnosis keys with key data and associated ENIntervalNumber.
+        Duplicate keys are ignored. This prevents a bad actor from posting the same key to the server with a different
+        ENIntervalNumber. Key data should be base64 encoded.
+      description: Submit a list of diagnosis keys corresponding for a given period. Diadnosis Keys are Exposure Notification
+        Keys generated during the 14 day time period before the infection is reported to the server. The current specification
+        can be found in the Apple/Google protocol definition.
+        https://covid19-static.cdn-apple.com/applications/covid19/current/static/contact-tracing/pdf/ExposureNotification-CryptographySpecificationv1.2.pdf
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/DiagnosisKey'
+              minItems: 1
+              maxItems: 14
+              uniqueItems: true
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        uri: ${lambda_invoke_arn}
+        httpMethod: POST
+      responses:
+        '200':
+          description: Diagnosis Keys uploaded successfully
+        '400':
+          description: Request Parameter Invalid. Example, diagnosis key is invalid or ENIntervalNumber is invalid
+        '500':
+          description: Internal Server Error
+
+    get:
+      summary: Returns a list of diagnosis keys reported during a given interval number.
+
+      description: Interval number is a positive integer that corresponds to a specific fixed time interval and can
+        be calculated as (unix_epoch_time_seconds / time_interval_seconds).
+        Current value of time_interval_ms is (6 * 3600) or 6 hours. When not provided, returns the reports
+        corresponding to the latest interval batch.
+
+      parameters:
+        - in: query
+          name: intervalNumber
+          description: Positive integer that corresponds to a specific fixed time interval and can
+            be calculated as (unix_epoch_time_seconds / time_interval_seconds). When not provided, current
+            interval number is assumed.
+          required: false
+          schema:
+            type: integer
+            format: int64
+          example: 158874736
+        - in: query
+          name: intervalLength
+          description: The interval length in seconds used by the client to calculate intervalNumber.
+            The server will respond with a 401 if the interval length does not match the expected length.
+          required: false
+          schema:
+            type: integer
+            format: int64
+          example: 21600
+
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        uri: ${lambda_invoke_arn}
+        httpMethod: POST
+
+      responses:
+        '200':
+          description: List of diagnosis keys reported during the specified intervalNumber
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiagnosisKey'
+        '400':
+          description: Request Parameter Invalid
+        '401':
+          description: intervalLengthSeconds is not valid for the specified date
+        '500':
+          description: Internal Server Error
+
+components:
+  schemas:
+    DiagnosisKey:
+      description: Diagnosis Key is a daily tracing key that is revealed by the client to the server when a user
+        wants to report an infection. It consists of the key data and ENIntervalNumber. ENIntervalNumber is the interval
+        when the diagnosis key was generated on the device
+      type: object
+      properties:
+        keyData:
+          type: string
+          description: Base64 encoded key data of diagnosis key
+          minLength: 25
+          maxLength: 40
+        enIntervalNumber:
+          type: integer
+          format: int64
+          description: A unique unsigned integer corresponding to a specific date, calculated as
+            (Number of Seconds since Epoch) / (Interval Length in seconds). Currently this is 1 day.
+          minimum: 0
+      example:
+        keyData: "NGk1dTZoZDsnbHBbXXA5MAo="
+        enIntervalNumber: 18371
+
