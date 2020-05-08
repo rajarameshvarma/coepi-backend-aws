@@ -30,7 +30,7 @@ fun Routing.tcnReports() {
     route("/v4/tcnreport") {
         get {
             // Existing API does not make use of multi-value query parameters.
-            val parameters = parametersOf().toMap().mapValues { (_, v) -> v.first() }
+            val parameters = call.parameters.toMap().mapValues { (_, v) -> v.first() }
             val tcnResponse = tcnHandler.getReport(parameters)
             call.respondWith(tcnResponse)
         }
