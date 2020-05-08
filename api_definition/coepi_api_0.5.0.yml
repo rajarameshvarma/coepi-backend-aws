@@ -96,7 +96,7 @@ paths:
                   format: byte
         '400':
           description: Request Parameter Invalid
-        '401':
+        '432':
           description: intervalLength is not valid for the specified intervalNumber
         '500':
           description: Internal Server Error
@@ -179,7 +179,7 @@ paths:
                   $ref: '#/components/schemas/DiagnosisKey'
         '400':
           description: Request Parameter Invalid
-        '401':
+        '432':
           description: intervalLengthSeconds is not valid for the specified date
         '500':
           description: Internal Server Error
@@ -194,16 +194,30 @@ components:
       properties:
         keyData:
           type: string
+          format: byte
           description: Base64 encoded key data of diagnosis key
           minLength: 25
           maxLength: 40
-        enIntervalNumber:
+        rollingStartNumber:
           type: integer
           format: int64
-          description: A unique unsigned integer corresponding to a specific date, calculated as
-            (Number of Seconds since Epoch) / (Interval Length in seconds). Currently this is 1 day.
+          description: A unique unsigned integer corresponding to a specific interval when the key was generated,
+            calculated as (Number of Seconds since Epoch) / (Interval Length in seconds). Currently this is 10 minutes
+          minimum: 0
+        transmissionRiskLevel:
+          type: integer
+          format: int32
+          description: The risk of transmission associated with the person a key came from
+          minimum: 0
+        rollingPeriod:
+          type: integer
+          format: int64
+          description: The length of time that this key is valid in multiples of 10 minutes. Example 144 is equivalent
+            to 1 day
           minimum: 0
       example:
         keyData: "NGk1dTZoZDsnbHBbXXA5MAo="
-        enIntervalNumber: 18371
+        rollingStartNumber: 2648203
+        rollingPeriod: 144
+        transmissionRiskLevel: 3
 
