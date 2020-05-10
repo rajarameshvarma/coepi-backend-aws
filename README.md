@@ -86,8 +86,8 @@ deployed API:
 #### v4
 
 ```sh
-curl -X POST https://e6f2c4llfk.execute-api.us-west-1.amazonaws.com/v4/tcnreport -d "ZXlKMFpYTjBJam9pWW05a2VTSjk="
-curl -X GET https://e6f2c4llfk.execute-api.us-west-1.amazonaws.com/v4/tcnreport
+curl -X POST https://e6f2c4llfk.execute-api.us-west-1.amazonaws.com/v4/tcnreport/0.4.0 -d "ZXlKMFpYTjBJam9pWW05a2VTSjk="
+curl -X GET https://e6f2c4llfk.execute-api.us-west-1.amazonaws.com/v4/tcnreport/0.4.0
 ```
 
 ## Running
