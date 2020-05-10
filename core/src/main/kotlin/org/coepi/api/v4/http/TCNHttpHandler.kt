@@ -5,32 +5,39 @@ import org.coepi.api.InvalidTCNSignatureException
 import org.coepi.api.TCNClientException
 import org.coepi.api.UnexpectedIntervalLengthException
 import org.coepi.api.common.base64Decode
-import org.coepi.api.common.orNull
 import org.coepi.api.common.toByteBuffer
 import org.coepi.api.v4.Intervals
-import org.coepi.api.v4.reports.TCNReportService
+import org.coepi.api.v4.Intervals.MIN_REPORT_DATE
+import org.coepi.api.v4.dao.TCNReportsDao
+import org.coepi.api.v4.toInterval
 import org.slf4j.LoggerFactory
 import java.nio.ByteBuffer
-import java.time.LocalDate
-import java.time.format.DateTimeParseException
-import java.util.*
+import java.time.Clock
+import java.time.Instant
 
 class TCNHttpHandler(
+    private val clock: Clock,
     private val objectMapper: ObjectMapper,
-    private val reportService: TCNReportService
+    private val reportsDao: TCNReportsDao
 ) {
-    private val logger = LoggerFactory.getLogger(this.javaClass)
+    companion object {
+        private val logger = LoggerFactory.getLogger(this.javaClass)
+
+        const val INTERVAL_NUMBER_KEY = "intervalNumber"
+        const val INTERVAL_LENGTH_KEY = "intervalLength"
+    }
 
     fun getReport(parameters: Map<String, String>): HttpResponse {
         return try {
-            val (maybeDate, maybeInterval) = parseQueryParameters(parameters)
+            val (maybeInterval, maybeIntervalLength) = parseQueryParameters(parameters)
 
-            logger.info("Querying reports with date: $maybeDate and intervalNumber: $maybeInterval")
+            val now = clock.instant()
+            val intervalNumber = maybeInterval ?: now.toInterval()
+            val intervalLength = maybeIntervalLength ?: Intervals.INTERVAL_LENGTH
 
-            val reports =
-                reportService
-                    .getReports(maybeDate.orNull(), maybeInterval.orNull())
-                    .map { it.report }
+            logger.info("Querying reports with intervalNumber: $intervalNumber and $intervalLength")
+
+            val reports = reportsDao.queryReports(intervalNumber, intervalLength).map { it.report }
 
             logger.info("Number of reports retrieved successfully: ${reports.size}")
 
@@ -47,8 +54,14 @@ class TCNHttpHandler(
 
     fun postReport(body: ByteBuffer): HttpResponse =
         try {
+            val now = clock.instant()
             val reportData = body.base64Decode()
-            val savedReport = reportService.saveReport(reportData)
+            val savedReport = reportsDao.addReport(
+                    reportData = reportData,
+                    intervalNumber = now.toInterval(),
+                    intervalLength = Intervals.INTERVAL_LENGTH,
+                    timestamp = now.toEpochMilli()
+            )
             logger.info("Successfully added report ${savedReport.reportId}")
 
             Ok()
@@ -59,55 +72,52 @@ class TCNHttpHandler(
             logger.info("Failed to put report due to client error", ex)
             BadRequest(ex.message.orEmpty())
         }
-}
 
-const val DATE_KEY = "date"
-const val INTERVAL_NUMBER_KEY = "intervalNumber"
-const val INTERVAL_LENGTH_MS_KEY = "intervalLengthMs"
+    private fun parseQueryParameters(
+            parameters: Map<String, String>
+    ): Pair<Long?, Long?> {
+        var intervalNumber: Long? = null
+        var intervalLength: Long? = null
 
-private fun parseQueryParameters(
-    parameters: Map<String, String>
-): Pair<Optional<LocalDate>, Optional<Long>> {
-    var date = Optional.empty<LocalDate>()
-    var intervalNumber = Optional.empty<Long>()
+        try {
+            if (parameters.containsKey(INTERVAL_NUMBER_KEY)) {
+                intervalNumber = parameters[INTERVAL_NUMBER_KEY]?.toLong()
 
-    try {
-        if (!parameters[DATE_KEY].isNullOrEmpty()) {
-            val rawDate = LocalDate.parse(parameters[DATE_KEY]) // Unit Test
-            date = Optional.of(rawDate)
-        }
+                if (!parameters.containsKey(INTERVAL_LENGTH_KEY)) {
+                    throw TCNClientException(
+                            "$INTERVAL_LENGTH_KEY query parameter is required if " +
+                                    "$INTERVAL_NUMBER_KEY is provided"
+                    )
+                }
+                val intervalLength = parameters[INTERVAL_LENGTH_KEY]?.toLong()
 
-        if (parameters.containsKey(INTERVAL_NUMBER_KEY)) {
-            val rawBatch = parameters[INTERVAL_NUMBER_KEY]?.toLong()
-            intervalNumber = if (rawBatch != null) Optional.of(rawBatch) else Optional.empty()
+                if (intervalNumber == null || intervalLength == null) {
+                    throw TCNClientException("intervalNumber or intervalLength cannot be null")
+                }
 
-            if (!parameters.containsKey(INTERVAL_LENGTH_MS_KEY)) {
-                throw TCNClientException(
-                    "$INTERVAL_LENGTH_MS_KEY query parameter is required if " +
-                            " $INTERVAL_LENGTH_MS_KEY is provided"
-                )
+                if (intervalNumber <= 0 || intervalLength <= 0) {
+                    throw TCNClientException("intervalNumber or intervalLength cannot be less than or equal to 0")
+                }
+
+                if (intervalLength != Intervals.INTERVAL_LENGTH) {
+                    throw UnexpectedIntervalLengthException(
+                            "$intervalLength is invalid. " +
+                                    "Please use ${Intervals.INTERVAL_LENGTH} to calculate $INTERVAL_NUMBER_KEY"
+                    )
+                }
+
+                if (Instant.ofEpochSecond(intervalNumber * intervalLength)
+                                .isBefore(Intervals.MIN_REPORT_DATE)) {
+                    throw TCNClientException("No reports or keys exist before $MIN_REPORT_DATE for this " +
+                            "combination of $intervalNumber and $intervalLength")
+                }
             }
-            val intervalLengthMs = parameters[INTERVAL_LENGTH_MS_KEY]?.toLong()
-
-            if (intervalLengthMs != Intervals.INTERVAL_LENGTH_MS) {
-                throw UnexpectedIntervalLengthException(
-                    "$intervalLengthMs is invalid for the date " +
-                            "$DATE_KEY. Please use ${Intervals.INTERVAL_LENGTH_MS} to calculate $INTERVAL_NUMBER_KEY"
-                )
-            }
+        } catch (ex: NumberFormatException) {
+            throw TCNClientException(
+                    "$INTERVAL_NUMBER_KEY or $INTERVAL_LENGTH_KEY in " +
+                            "illegal number format.", ex
+            )
         }
-    } catch (ex: DateTimeParseException) {
-        throw TCNClientException("$DATE_KEY in illegal date format.", ex)
-    } catch (ex: NumberFormatException) {
-        throw TCNClientException(
-            "$INTERVAL_NUMBER_KEY or $INTERVAL_LENGTH_MS_KEY in " +
-                    "illegal number format.", ex
-        )
+        return Pair(intervalNumber, intervalLength)
     }
-
-    if (intervalNumber.isPresent && intervalNumber.get() < 0) {
-        throw TCNClientException("$INTERVAL_LENGTH_MS_KEY should be positive")
-    }
-
-    return Pair(date, intervalNumber)
 }
