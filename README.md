@@ -111,5 +111,5 @@ The API can be tested by pasting the definition on [Swagger Editor](http://edito
 ### v4
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**tcnreportPost**](docs/DefaultApi.md#cenreportpost) | **POST** /tcnreport | Submit symptom or infection report following TCN 0.4.0 protocol
-[**tcnreportGet**](docs/DefaultApi.md#cenreporttimestamplowertimestampupperget) | **GET** /tcnreport?date={report_date}?intervalNumber={interval}?intervalLengthMs={interval_length_ms}| Returns a list of reports generated on the specified date and interval
+[**tcnreportPost**](docs/DefaultApi.md#cenreportpost) | **POST** /tcnreport/0.4.0 | Submit symptom or infection report following TCN 0.4.0 protocol
+[**tcnreportGet**](docs/DefaultApi.md#cenreporttimestamplowertimestampupperget) | **GET** /tcnreport/0.4.0?intervalNumber={intervalNumber}?intervalLength={interval_length_seconds}| Returns a list of reports generated on the specified interval
