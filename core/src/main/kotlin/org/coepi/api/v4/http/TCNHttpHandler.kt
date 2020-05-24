@@ -21,7 +21,7 @@ class TCNHttpHandler(
     private val reportsDao: TCNReportsDao
 ) {
     companion object {
-        private val logger = LoggerFactory.getLogger(this.javaClass)
+        private val logger = LoggerFactory.getLogger(TCNHttpHandler::class.java)
 
         const val INTERVAL_NUMBER_KEY = "intervalNumber"
         const val INTERVAL_LENGTH_KEY = "intervalLength"
