@@ -8,8 +8,6 @@ import org.junit.jupiter.api.Test
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneId
 
 @Disabled
 class TCNReportsDaoTest {

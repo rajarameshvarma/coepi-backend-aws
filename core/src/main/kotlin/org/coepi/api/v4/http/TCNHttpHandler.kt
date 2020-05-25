@@ -1,13 +1,17 @@
 package org.coepi.api.v4.http
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.coepi.api.InvalidTCNSignatureException
 import org.coepi.api.TCNClientException
 import org.coepi.api.UnexpectedIntervalLengthException
 import org.coepi.api.common.base64Decode
 import org.coepi.api.common.toByteBuffer
 import org.coepi.api.v4.Intervals
 import org.coepi.api.v4.Intervals.MIN_REPORT_DATE
+import org.coepi.api.v4.crypto.InvalidReportIndex
+import org.coepi.api.v4.crypto.OversizeMemo
+import org.coepi.api.v4.crypto.ReportVerificationFailed
+import org.coepi.api.v4.crypto.SignedReport
+import org.coepi.api.v4.crypto.UnknownMemoType
 import org.coepi.api.v4.dao.TCNReportsDao
 import org.coepi.api.v4.toInterval
 import org.slf4j.LoggerFactory
@@ -56,6 +60,10 @@ class TCNHttpHandler(
         try {
             val now = clock.instant()
             val reportData = body.base64Decode()
+
+            val report = SignedReport.fromByteBuffer(reportData)
+            report.verify()
+
             val savedReport = reportsDao.addReport(
                     reportData = reportData,
                     intervalNumber = now.toInterval(),
@@ -65,12 +73,19 @@ class TCNHttpHandler(
             logger.info("Successfully added report ${savedReport.reportId}")
 
             Ok()
-        } catch (ex: InvalidTCNSignatureException) {
+        } catch (ex: ReportVerificationFailed) {
             logger.info("Failed to put report due to illegal TCN Signature", ex)
             Unauthorized(ex.message.orEmpty())
-        } catch (ex: IllegalArgumentException) {
+        } catch (ex: Exception) {
             logger.info("Failed to put report due to client error", ex)
-            BadRequest(ex.message.orEmpty())
+
+            when(ex) {
+                is UnknownMemoType, is IllegalArgumentException, is InvalidReportIndex,
+                is OversizeMemo -> {
+                    BadRequest(ex.message.orEmpty())
+                }
+                else -> throw ex
+            }
         }
 
     private fun parseQueryParameters(
