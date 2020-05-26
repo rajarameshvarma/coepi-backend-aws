@@ -15,6 +15,8 @@ import org.coepi.api.v4.crypto.UnknownMemoType
 import org.coepi.api.v4.dao.TCNReportsDao
 import org.coepi.api.v4.toInterval
 import org.slf4j.LoggerFactory
+import java.nio.BufferOverflowException
+import java.nio.BufferUnderflowException
 import java.nio.ByteBuffer
 import java.time.Clock
 import java.time.Instant
@@ -81,7 +83,8 @@ class TCNHttpHandler(
 
             when(ex) {
                 is UnknownMemoType, is IllegalArgumentException, is InvalidReportIndex,
-                is OversizeMemo -> {
+                is BufferUnderflowException, is OversizeMemo -> {
+                    logger.info("Bad Request. ${ex.message.orEmpty()}")
                     BadRequest(ex.message.orEmpty())
                 }
                 else -> throw ex
