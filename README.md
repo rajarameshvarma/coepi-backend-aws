@@ -1,9 +1,10 @@
 # TCN Server on AWS
 
-This repo contains server and infrastructure code for deploying and running
-CoEpi Cloud API on AWS.
+This repo contains server and infrastructure code for deploying and running CoEpi Cloud API on AWS.
 
-* **Compute**: AWS Lambda
+There are two API frontends provided: an AWS Lambda (api-aws-lambda) and a standalone server (api-server). For more information on running the standalone server, see [api-server/README.md](api-server/README.md).
+
+* **Compute**: AWS Lambda OR any container-based solution
 * **Data Store**: DynamoDB
 * **Routing and Load Balancing**: API Gateway
 * **Permissions Management**: IAM
@@ -82,11 +83,17 @@ These steps assume you have already initialized Terraform as described in "Infra
 The API Gateway root URL will be echoed to the shell, and you can CURL the
 deployed API:
 
+#### Base64 Encoded Report Data
+
+```
+h0NRnh3cJgUtHeI3oycAsJhWPsechtfiDyxkKQun9sV9lO0LhZfRRm4sMYGoSSOEBjj9qhGbvSookL/pBUkTwhQAKAAACkhpZ2ggRmV2ZXIOOyQmkj5pi/bM0Uo/h/4RxwH2wrN094GIOAQgMBCs8rCByJlxUqp+ZAJqgev2hC56nSHxbH0stERKps5GFI8E
+```
+
 #### v4
 
 ```sh
-curl -X POST https://e6f2c4llfk.execute-api.us-west-1.amazonaws.com/v4/tcnreport -d "ZXlKMFpYTjBJam9pWW05a2VTSjk="
-curl -X GET https://e6f2c4llfk.execute-api.us-west-1.amazonaws.com/v4/tcnreport
+curl -X POST https://e6f2c4llfk.execute-api.us-west-1.amazonaws.com/v4/tcnreport/0.4.0 -d "<Base64 encoded report data>"
+curl -X GET https://e6f2c4llfk.execute-api.us-west-1.amazonaws.com/v4/tcnreport/0.4.0
 ```
 
 ## Running
@@ -110,5 +117,5 @@ The API can be tested by pasting the definition on [Swagger Editor](http://edito
 ### v4
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**tcnreportPost**](docs/DefaultApi.md#cenreportpost) | **POST** /tcnreport | Submit symptom or infection report following TCN 0.4.0 protocol
-[**tcnreportGet**](docs/DefaultApi.md#cenreporttimestamplowertimestampupperget) | **GET** /tcnreport?date={report_date}?intervalNumber={interval}?intervalLengthMs={interval_length_ms}| Returns a list of reports generated on the specified date and interval
+[**tcnreportPost**](docs/DefaultApi.md#cenreportpost) | **POST** /tcnreport/0.4.0 | Submit symptom or infection report following TCN 0.4.0 protocol
+[**tcnreportGet**](docs/DefaultApi.md#cenreporttimestamplowertimestampupperget) | **GET** /tcnreport/0.4.0?intervalNumber={intervalNumber}?intervalLength={interval_length_seconds}| Returns a list of reports generated on the specified interval

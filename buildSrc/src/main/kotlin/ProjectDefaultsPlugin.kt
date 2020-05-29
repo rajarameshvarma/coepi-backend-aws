@@ -53,6 +53,7 @@ private fun Project.configureDependencies() {
 
         "implementation"(platform("com.amazonaws:aws-java-sdk-bom:1.11.769"))
         "implementation"(platform("com.fasterxml.jackson:jackson-bom:2.10.3"))
+        "implementation"(platform("io.ktor:ktor-bom:1.3.1"))
         "implementation"(platform("org.apache.logging.log4j:log4j-bom:2.13.2"))
 
         // Common dependencies for all projects
@@ -64,6 +65,7 @@ private fun Project.configureDependencies() {
 
         "testImplementation"(platform("org.junit:junit-bom:5.6.2"))
 
+        "testImplementation"("io.mockk:mockk:1.10.0")
         "testImplementation"("org.assertj:assertj-core:3.12.2")
         "testImplementation"("org.junit.jupiter:junit-jupiter-api")
 

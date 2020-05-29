@@ -14,9 +14,13 @@ repositories {
 
 dependencies {
     implementation("com.amazonaws:aws-java-sdk-dynamodb")
+    implementation("com.fasterxml.jackson.core:jackson-annotations")
+    implementation("com.fasterxml.jackson.core:jackson-databind")
     implementation("org.apache.commons:commons-lang3:3.10")
+    implementation("cafe.cryptography:ed25519-elisabeth:0.1.0")
 
     testImplementation("com.amazonaws:DynamoDBLocal:1.11.477")
+    testImplementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 
     dynamodb(fileTree(dir: 'lib', include: ["*.dylib", "*.so", "*.dll"]))
     dynamodb("com.amazonaws:DynamoDBLocal:1.11.477")
@@ -28,6 +32,10 @@ task copyNativeDeps(type: Copy) {
 }
 
 test.dependsOn(copyNativeDeps)
-test.doFirst {
-    systemProperty("java.library.path", "./build/libs")
+test {
+    doFirst {
+        systemProperty("java.library.path", "./build/libs")
+    }
+
+    testLogging.showStandardStreams = true
 }
