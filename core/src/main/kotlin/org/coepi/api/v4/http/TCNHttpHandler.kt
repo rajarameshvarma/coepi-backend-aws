@@ -43,7 +43,7 @@ class TCNHttpHandler(
 
             logger.info("Querying reports with intervalNumber: $intervalNumber and $intervalLength")
 
-            val reports = reportsDao.queryReports(intervalNumber, intervalLength).map { it.report }
+            val reports = reportsDao.queryReports(intervalNumber, intervalLength)
 
             logger.info("Number of reports retrieved successfully: ${reports.size}")
 
